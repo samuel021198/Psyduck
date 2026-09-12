@@ -18,13 +18,13 @@
     body.ditto header { background: linear-gradient(#e4d2f0, #f4eef8); }
     a { color: #5c3d00; font-weight: 600; }
     body.ditto a { color: #4a2d68; }
-    nav { display: flex; gap: .75rem; padding: .85rem 1.5rem 0; }
+    nav { display: flex; gap: .75rem; padding: .85rem 1.5rem 0; flex-wrap: wrap; }
     nav a { text-decoration: none; padding: .25rem .7rem; border-radius: 999px; border: 1px solid #d4c48a; background: #fff; }
     nav a.on { background: var(--accent); color: #24180a; border-color: transparent; }
     header { display: grid; grid-template-columns: 140px 1fr; gap: 1.1rem; align-items: center; padding: 1rem 1.5rem; background: linear-gradient(#ffe56a, var(--paper)); }
     header img { width: 140px; }
     h1 { margin: 0 0 .35rem; font-size: 1.7rem; }
-    .meta, .flavor, .hint, .count, article small { color: var(--muted); }
+    .meta, .flavor, .hint, .count, article small, a.pick small { color: var(--muted); }
     .meta { font-weight: 700; }
     .flavor, .hint { max-width: 44rem; }
     .hint { margin: .4rem 0 0; font-size: .92rem; }
@@ -37,31 +37,31 @@
     #sync-code { width: 8.2rem; letter-spacing: .08em; text-transform: lowercase; }
     button { padding: .45rem .7rem; border: 1px solid #c9b57a; border-radius: 8px; background: #fff; font: inherit; color: var(--ink); cursor: pointer; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; padding: 0 1.5rem 3rem; }
-    article { background: var(--card); border: 1px solid #d8c89a; border-radius: 12px; padding: .6rem; cursor: pointer; }
+    article, a.pick { background: var(--card); border: 1px solid #d8c89a; border-radius: 12px; padding: .6rem; }
+    article { cursor: pointer; }
     article.owned { outline: 3px solid var(--accent); }
     article img { width: 100%; aspect-ratio: 63/88; object-fit: contain; background: #efe6c8; border-radius: 6px; filter: grayscale(1); }
     article.owned img { filter: none; }
-    article h2 { margin: .45rem 0 0; font-size: .95rem; color: var(--ink); }
+    article h2, a.pick h2 { margin: .45rem 0 0; font-size: .95rem; color: var(--ink); }
+    a.pick { text-decoration: none; color: inherit; display: block; }
+    a.pick img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #efe6c8; border-radius: 6px; }
     @media (max-width: 640px) { header { grid-template-columns: 1fr; text-align: center; } header img { margin: 0 auto; } }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="index.html">可達鴨</a>
-    <a href="ditto.html">百變怪</a>
-  </nav>
+  <nav id="nav"></nav>
   <header>
     <img id="art" alt="">
     <div>
       <div class="meta" id="meta"></div>
       <h1 id="title"></h1>
       <p class="flavor" id="source"></p>
-      <p class="flavor" id="flavor">載入中…</p>
-      <p class="hint">灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。holo／reverse 等印刷只列 TCG Collector 有的，不是張張都有。同步碼可在別的裝置還原；不要把碼給別人。</p>
+      <p class="flavor" id="flavor"></p>
+      <p class="hint" id="hint"></p>
       <div class="stats" id="stats"></div>
     </div>
   </header>
-  <div class="toolbar">
+  <div class="toolbar" id="filters">
     <input type="search" id="q" placeholder="搜名稱或系列" aria-label="搜尋">
     <select id="kind">
       <option value="">全部</option>
@@ -80,30 +80,27 @@
   <script>
     const pages = {
       psyduck: {
-        num: 54, json: "data/cards.json", key: "psyduck-owned",
+        num: 54, json: "data/cards.json", key: "psyduck-owned", label: "可達鴨",
         title: "可達鴨日文卡圖鑑",
         names: "#054 · 水屬性 · 可達鴨 / コダック / Psyduck",
         src: "https://www.tcgcollector.com/pokedex/54/psyduck/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=allCardVariants",
         srcLabel: "TCG Collector 日文 #054",
       },
       ditto: {
-        num: 132, json: "data/ditto.json", key: "ditto-owned",
+        num: 132, json: "data/ditto.json", key: "ditto-owned", label: "百變怪",
         title: "百變怪日文卡圖鑑",
         names: "#132 · 一般屬性 · 百變怪 / メタモン / Ditto",
         src: "https://www.tcgcollector.com/pokedex/132/ditto/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=allCardVariants",
         srcLabel: "TCG Collector 日文 #132",
       },
     };
-    const slug = /ditto/i.test(location.pathname + location.search) ? "ditto" : "psyduck";
-    const dex = pages[slug];
+    const q = new URLSearchParams(location.search).get("p");
+    const slug = pages[q] ? q : (/ditto/i.test(location.pathname) ? "ditto" : "");
+    const dex = slug ? pages[slug] : null;
     document.body.classList.toggle("ditto", slug === "ditto");
-    document.title = dex.title;
-    document.querySelector(`nav a[href="${slug === "ditto" ? "ditto.html" : "index.html"}"]`).classList.add("on");
-    document.getElementById("art").src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dex.num}.png`;
-    document.getElementById("art").alt = dex.title;
-    document.getElementById("meta").textContent = dex.names;
-    document.getElementById("title").textContent = dex.title;
-      document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>（有印刷的才分開算）`;
+    document.getElementById("nav").innerHTML =
+      `<a href="index.html"${slug ? "" : " class=\"on\""}>主頁</a>` +
+      Object.entries(pages).map(([k, p]) => `<a href="?p=${k}"${slug === k ? " class=\"on\"" : ""}>${p.label}</a>`).join("");
 
     const CODE_RE = /^[a-z0-9]{8}$/;
     const CODE_KEY = "dex-sync-code";
@@ -123,8 +120,10 @@
     const applyPair = (data) => {
       localStorage.setItem("psyduck-owned", JSON.stringify(data.psyduck || []));
       localStorage.setItem("ditto-owned", JSON.stringify(data.ditto || []));
-      owned.clear();
-      for (const id of JSON.parse(localStorage.getItem(dex.key) || "[]")) owned.add(id);
+      if (dex) {
+        owned.clear();
+        for (const id of JSON.parse(localStorage.getItem(dex.key) || "[]")) owned.add(id);
+      }
     };
     const cloudFail = () => status(/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "雲端只在上線網站可用" : "同步失敗");
     const cloudPut = () => fetch("/api/sync?code=" + syncCode, {
@@ -140,15 +139,6 @@
       else status("已連上雲端");
       if (n) status("已從雲端載入");
     }).catch(cloudFail);
-
-    const owned = new Set(JSON.parse(localStorage.getItem(dex.key) || "[]"));
-    let cards = [];
-    let saveTimer;
-    const save = () => {
-      localStorage.setItem(dex.key, JSON.stringify([...owned]));
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(cloudPut, 400);
-    };
     document.getElementById("sync-copy").onclick = () => navigator.clipboard.writeText(syncCode).then(() => status("已複製")).catch(() => status(syncCode));
     document.getElementById("sync-go").onclick = () => {
       const next = document.getElementById("sync-code").value.toLowerCase().trim();
@@ -156,18 +146,52 @@
       syncCode = next;
       localStorage.setItem(CODE_KEY, syncCode);
       document.getElementById("sync-code").value = syncCode;
-      cloudGet(true).then(render);
+      cloudGet(true).then(() => { if (dex) render(); else home(); });
     };
     document.getElementById("sync-code").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sync-go").click(); });
 
+    const owned = new Set(dex ? JSON.parse(localStorage.getItem(dex.key) || "[]") : []);
+    let cards = [];
+    let saveTimer;
+    const save = () => {
+      localStorage.setItem(dex.key, JSON.stringify([...owned]));
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(cloudPut, 400);
+    };
+
+    function home() {
+      document.title = "日文卡圖鑑";
+      document.getElementById("art").src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/54.png";
+      document.getElementById("art").alt = "日文卡圖鑑";
+      document.getElementById("meta").textContent = "日文卡圖鑑";
+      document.getElementById("title").textContent = "我的收藏";
+      document.getElementById("source").textContent = "";
+      document.getElementById("flavor").textContent = "而家得呢幾本。遲吓再加其他寶可夢。";
+      document.getElementById("hint").textContent = "點一本圖鑑開始勾卡。同步碼兩頁共用。";
+      document.getElementById("filters").hidden = true;
+      Promise.all(Object.entries(pages).map(([k, p]) =>
+        fetch(p.json).then((r) => r.json()).then((list) => ({ k, p, n: list.length }))
+      )).then((rows) => {
+        document.getElementById("grid").innerHTML = rows.map(({ k, p, n }) => {
+          const have = JSON.parse(localStorage.getItem(p.key) || "[]").length;
+          return `<a class="pick" href="?p=${k}">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.num}.png" alt="${p.label}">
+            <h2>${p.label}</h2>
+            <small>${p.names.split(" · ")[0]} · 已收藏 ${have} / ${n}</small>
+          </a>`;
+        }).join("");
+      });
+      cloudGet(false);
+    }
+
     function render() {
-      const q = document.getElementById("q").value.trim().toLowerCase();
+      const qv = document.getElementById("q").value.trim().toLowerCase();
       const kind = document.getElementById("kind").value;
       const list = cards.filter((c) => {
         if (kind === "owned" && !owned.has(c.id)) return false;
         if (kind === "missing" && owned.has(c.id)) return false;
-        if (!q) return true;
-        return [c.name, c.nameJa, c.set].join(" ").toLowerCase().includes(q);
+        if (!qv) return true;
+        return [c.name, c.nameJa, c.set].join(" ").toLowerCase().includes(qv);
       });
       document.getElementById("count").textContent = `這頁 ${list.length} 張 · 已收藏 ${owned.size} / ${cards.length}`;
       document.getElementById("grid").innerHTML = list.map((c) => `
@@ -178,32 +202,43 @@
         </article>`).join("");
     }
 
-    document.getElementById("q").addEventListener("input", render);
-    document.getElementById("kind").addEventListener("change", render);
-    document.getElementById("grid").addEventListener("click", (e) => {
-      const art = e.target.closest("article");
-      if (!art) return;
-      const id = art.dataset.id;
-      if (owned.has(id)) owned.delete(id); else owned.add(id);
-      save();
-      render();
-    });
-
-    Promise.all([
-      fetch(dex.json).then((r) => r.json()),
-      fetch(`https://pokeapi.co/api/v2/pokemon/${dex.num}`).then((r) => r.json()),
-      fetch(`https://pokeapi.co/api/v2/pokemon-species/${dex.num}`).then((r) => r.json()),
-      cloudGet(false),
-    ]).then(([list, mon, species]) => {
-      cards = list;
-      document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel} · ${cards.length} 張</a>（有印刷的才分開算）`;
-      const pick = (lang) => (species.flavor_text_entries.find((f) => f.language.name === lang) || {}).flavor_text;
-      document.getElementById("flavor").textContent = (pick("zh-Hant") || pick("zh-Hans") || pick("ja") || pick("en") || "").replace(/\s+/g, " ");
-      document.getElementById("stats").innerHTML = mon.stats.map((s) => `<span>${s.stat.name} ${s.base_stat}</span>`).join("");
-      render();
-    }).catch(() => {
-      document.getElementById("flavor").textContent = "讀取失敗：請用本機網站開啟，不要直接雙擊檔案。";
-    });
+    if (!dex) {
+      home();
+    } else {
+      document.title = dex.title;
+      document.getElementById("art").src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dex.num}.png`;
+      document.getElementById("art").alt = dex.title;
+      document.getElementById("meta").textContent = dex.names;
+      document.getElementById("title").textContent = dex.title;
+      document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>（有印刷的才分開算）`;
+      document.getElementById("flavor").textContent = "載入中…";
+      document.getElementById("hint").textContent = "灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。holo／reverse 等印刷只列 TCG Collector 有的，不是張張都有。同步碼可在別的裝置還原；不要把碼給別人。";
+      document.getElementById("q").addEventListener("input", render);
+      document.getElementById("kind").addEventListener("change", render);
+      document.getElementById("grid").addEventListener("click", (e) => {
+        const art = e.target.closest("article");
+        if (!art) return;
+        const id = art.dataset.id;
+        if (owned.has(id)) owned.delete(id); else owned.add(id);
+        save();
+        render();
+      });
+      Promise.all([
+        fetch(dex.json).then((r) => r.json()),
+        fetch(`https://pokeapi.co/api/v2/pokemon/${dex.num}`).then((r) => r.json()),
+        fetch(`https://pokeapi.co/api/v2/pokemon-species/${dex.num}`).then((r) => r.json()),
+        cloudGet(false),
+      ]).then(([list, mon, species]) => {
+        cards = list;
+        document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel} · ${cards.length} 張</a>（有印刷的才分開算）`;
+        const pick = (lang) => (species.flavor_text_entries.find((f) => f.language.name === lang) || {}).flavor_text;
+        document.getElementById("flavor").textContent = (pick("zh-Hant") || pick("zh-Hans") || pick("ja") || pick("en") || "").replace(/\s+/g, " ");
+        document.getElementById("stats").innerHTML = mon.stats.map((s) => `<span>${s.stat.name} ${s.base_stat}</span>`).join("");
+        render();
+      }).catch(() => {
+        document.getElementById("flavor").textContent = "讀取失敗：請用本機網站開啟，不要直接雙擊檔案。";
+      });
+    }
   </script>
 </body>
 </html>
