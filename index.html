@@ -32,6 +32,9 @@
     .meta { font-weight: 700; font-size: .92rem; }
     .flavor { margin: .35rem 0 0; max-width: 40rem; }
     .hint { margin: .45rem 0 0; font-size: .95rem; max-width: 40rem; }
+    .progress { margin: .55rem 0 0; max-width: 22rem; }
+    .progress span, a.pick small { display: block; margin-top: .25rem; font-size: .85rem; font-weight: 700; color: var(--ink); }
+    progress { width: 100%; height: .55rem; accent-color: var(--accent); }
     .stats { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0 0; }
     .stats span { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: .1rem .55rem; font-size: .8rem; color: var(--ink); }
     .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: 0 var(--pad-r) .85rem var(--pad); }
@@ -50,7 +53,7 @@
     article img { aspect-ratio: 63/88; filter: grayscale(1); }
     article.owned img { filter: none; }
     article h2, a.pick h2 { margin: .4rem 0 0; font-size: .95rem; color: var(--ink); }
-    article small, a.pick small { display: block; margin-top: .15rem; font-size: .78rem; line-height: 1.35; }
+    article small { display: block; margin-top: .15rem; font-size: .78rem; line-height: 1.35; }
     a.pick { text-decoration: none; color: inherit; display: block; min-height: 44px; }
     a.pick img { aspect-ratio: 1; }
     .zoom { display: block; width: 100%; padding: 0; border: 0; background: none; min-height: 0; border-radius: 6px; }
@@ -62,7 +65,8 @@
     dialog img { max-width: min(92vw, 420px); max-height: 78dvh; width: auto; height: auto; border-radius: 10px; background: #111; }
     dialog .cap { margin: 0; color: #f6edd4; text-align: center; font-weight: 700; }
     dialog .sub { margin: 0; color: #d8c89a; text-align: center; font-size: .9rem; }
-    dialog menu { margin: 0; padding: 0; }
+    dialog menu { margin: 0; padding: 0; display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+    #zoom-mark.on { background: var(--accent); border-color: transparent; }
     @media (max-width: 720px) {
       header { grid-template-columns: 72px 1fr; gap: .7rem; padding-top: .75rem; }
       header img { width: 72px; }
@@ -89,6 +93,10 @@
       <p class="flavor" id="source"></p>
       <p class="flavor" id="flavor"></p>
       <p class="hint" id="hint"></p>
+      <div class="progress" id="progress" hidden>
+        <progress id="bar" max="1" value="0"></progress>
+        <span id="bar-txt"></span>
+      </div>
       <div class="stats" id="stats"></div>
     </div>
   </header>
@@ -113,7 +121,10 @@
       <img id="zoom-img" alt="">
       <p class="cap" id="zoom-cap"></p>
       <p class="sub" id="zoom-sub"></p>
-      <menu><button type="button" id="zoom-close">關閉</button></menu>
+      <menu>
+        <button type="button" id="zoom-mark">未收藏</button>
+        <button type="button" id="zoom-close">關閉</button>
+      </menu>
     </div>
   </dialog>
   <script>
@@ -190,14 +201,38 @@
     document.getElementById("sync-code").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sync-go").click(); });
 
     const dlg = document.getElementById("zoom");
-    const openZoom = (src, cap, sub) => {
-      document.getElementById("zoom-img").src = src;
-      document.getElementById("zoom-img").alt = cap;
-      document.getElementById("zoom-cap").textContent = cap;
-      document.getElementById("zoom-sub").textContent = sub;
+    let zoomId = "";
+    const paintZoom = () => {
+      const on = owned.has(zoomId);
+      const btn = document.getElementById("zoom-mark");
+      btn.textContent = on ? "已收藏" : "未收藏";
+      btn.classList.toggle("on", on);
+    };
+    const paintBar = () => {
+      const el = document.getElementById("progress");
+      if (!cards.length) { el.hidden = true; return; }
+      el.hidden = false;
+      document.getElementById("bar").max = cards.length;
+      document.getElementById("bar").value = owned.size;
+      document.getElementById("bar-txt").textContent = `進度 ${owned.size} / ${cards.length}`;
+    };
+    const toggle = (id) => {
+      if (owned.has(id)) owned.delete(id); else owned.add(id);
+      save();
+      render();
+      paintZoom();
+    };
+    const openZoom = (art) => {
+      zoomId = art.dataset.id;
+      document.getElementById("zoom-img").src = art.dataset.image;
+      document.getElementById("zoom-img").alt = art.dataset.name;
+      document.getElementById("zoom-cap").textContent = art.dataset.name;
+      document.getElementById("zoom-sub").textContent = art.dataset.set;
+      paintZoom();
       dlg.showModal();
     };
     document.getElementById("zoom-close").onclick = () => dlg.close();
+    document.getElementById("zoom-mark").onclick = (e) => { e.stopPropagation(); if (zoomId) toggle(zoomId); };
     dlg.addEventListener("click", (e) => { if (e.target === dlg || e.target.classList.contains("sheet")) dlg.close(); });
 
     const owned = new Set(dex ? JSON.parse(localStorage.getItem(dex.key) || "[]") : []);
@@ -219,19 +254,29 @@
       document.getElementById("flavor").textContent = "";
       document.getElementById("hint").textContent = "記低Collection既同步碼!";
       document.getElementById("filters").hidden = true;
-      Promise.all(Object.entries(pages).map(([k, p]) =>
-        fetch(p.json).then((r) => r.json()).then((list) => ({ k, p, n: list.length }))
-      )).then((rows) => {
+      const fillHome = (rows) => {
+        const total = rows.reduce((a, r) => a + r.n, 0);
+        const haveAll = rows.reduce((a, r) => a + JSON.parse(localStorage.getItem(r.p.key) || "[]").length, 0);
+        const box = document.getElementById("progress");
+        box.hidden = !total;
+        document.getElementById("bar").max = total || 1;
+        document.getElementById("bar").value = haveAll;
+        document.getElementById("bar-txt").textContent = `全部進度 ${haveAll} / ${total}`;
         document.getElementById("grid").innerHTML = rows.map(({ k, p, n }) => {
           const have = JSON.parse(localStorage.getItem(p.key) || "[]").length;
           return `<a class="pick" href="?p=${k}">
             <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.num}.png" alt="${p.label}">
             <h2>${p.label}</h2>
+            <progress max="${n}" value="${have}"></progress>
             <small>已收藏 ${have} / ${n}</small>
           </a>`;
         }).join("");
-      });
-      cloudGet(false);
+      };
+      const loadHome = () => Promise.all(Object.entries(pages).map(([k, p]) =>
+        fetch(p.json).then((r) => r.json()).then((list) => ({ k, p, n: list.length }))
+      )).then(fillHome);
+      loadHome();
+      cloudGet(false).then(loadHome);
     }
 
     function render() {
@@ -244,6 +289,7 @@
         return [c.name, c.nameJa, c.set].join(" ").toLowerCase().includes(qv);
       });
       document.getElementById("count").textContent = `已收藏 ${owned.size} / ${cards.length}`;
+      paintBar();
       document.getElementById("grid").innerHTML = list.map((c) => {
         const on = owned.has(c.id);
         return `<article class="${on ? "owned" : ""}" data-id="${c.id}" data-image="${c.image}" data-name="${(c.nameJa || c.name).replace(/"/g, "")}" data-set="${c.set.replace(/"/g, "")}">
@@ -265,21 +311,18 @@
       document.getElementById("title").textContent = dex.title;
       document.getElementById("source").innerHTML = `<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>`;
       document.getElementById("flavor").textContent = "載入中…";
-      document.getElementById("hint").textContent = "撳卡圖放大。撳「未收藏」變成已收藏。灰階＝未有；彩色＝已有。有 holo／reverse 先分開列。";
+      document.getElementById("hint").textContent = "撳卡圖放大，放大入面都可以收藏。灰階＝未有；彩色＝已有。";
       document.getElementById("q").addEventListener("input", render);
       document.getElementById("kind").addEventListener("change", render);
       document.getElementById("grid").addEventListener("click", (e) => {
         const art = e.target.closest("article");
         if (!art) return;
         if (e.target.closest(".zoom")) {
-          openZoom(art.dataset.image, art.dataset.name, art.dataset.set);
+          openZoom(art);
           return;
         }
         if (!e.target.closest(".mark")) return;
-        const id = art.dataset.id;
-        if (owned.has(id)) owned.delete(id); else owned.add(id);
-        save();
-        render();
+        toggle(art.dataset.id);
       });
       Promise.all([
         fetch(dex.json).then((r) => r.json()),
