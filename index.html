@@ -57,7 +57,7 @@
       <h1 id="title"></h1>
       <p class="flavor" id="source"></p>
       <p class="flavor" id="flavor">載入中…</p>
-      <p class="hint">灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。同步碼可在別的裝置還原；不要把碼給別人。</p>
+      <p class="hint">灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。holo／reverse 等印刷只列 TCG Collector 有的，不是張張都有。同步碼可在別的裝置還原；不要把碼給別人。</p>
       <div class="stats" id="stats"></div>
     </div>
   </header>
@@ -83,15 +83,15 @@
         num: 54, json: "data/cards.json", key: "psyduck-owned",
         title: "可達鴨日文卡圖鑑",
         names: "#054 · 水屬性 · 可達鴨 / コダック / Psyduck",
-        src: "https://www.tcgcollector.com/pokedex/54/psyduck/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=anyCardVariant",
-        srcLabel: "TCG Collector 日文 #054 · 42 張",
+        src: "https://www.tcgcollector.com/pokedex/54/psyduck/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=allCardVariants",
+        srcLabel: "TCG Collector 日文 #054",
       },
       ditto: {
         num: 132, json: "data/ditto.json", key: "ditto-owned",
         title: "百變怪日文卡圖鑑",
         names: "#132 · 一般屬性 · 百變怪 / メタモン / Ditto",
-        src: "https://www.tcgcollector.com/pokedex/132/ditto/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=anyCardVariant",
-        srcLabel: "TCG Collector 日文 #132 · 36 張",
+        src: "https://www.tcgcollector.com/pokedex/132/ditto/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=allCardVariants",
+        srcLabel: "TCG Collector 日文 #132",
       },
     };
     const slug = /ditto/i.test(location.pathname + location.search) ? "ditto" : "psyduck";
@@ -103,7 +103,7 @@
     document.getElementById("art").alt = dex.title;
     document.getElementById("meta").textContent = dex.names;
     document.getElementById("title").textContent = dex.title;
-    document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>`;
+      document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>（有印刷的才分開算）`;
 
     const CODE_RE = /^[a-z0-9]{8}$/;
     const CODE_KEY = "dex-sync-code";
@@ -196,6 +196,7 @@
       cloudGet(false),
     ]).then(([list, mon, species]) => {
       cards = list;
+      document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel} · ${cards.length} 張</a>（有印刷的才分開算）`;
       const pick = (lang) => (species.flavor_text_entries.find((f) => f.language.name === lang) || {}).flavor_text;
       document.getElementById("flavor").textContent = (pick("zh-Hant") || pick("zh-Hans") || pick("ja") || pick("en") || "").replace(/\s+/g, " ");
       document.getElementById("stats").innerHTML = mon.stats.map((s) => `<span>${s.stat.name} ${s.base_stat}</span>`).join("");
