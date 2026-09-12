@@ -34,6 +34,8 @@
     input, select { padding: .45rem .7rem; border: 1px solid #c9b57a; border-radius: 8px; background: #fff; font: inherit; color: var(--ink); }
     input[type=search] { min-width: 14rem; }
     .count { margin-left: auto; }
+    #sync-code { width: 8.2rem; letter-spacing: .08em; text-transform: lowercase; }
+    button { padding: .45rem .7rem; border: 1px solid #c9b57a; border-radius: 8px; background: #fff; font: inherit; color: var(--ink); cursor: pointer; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; padding: 0 1.5rem 3rem; }
     article { background: var(--card); border: 1px solid #d8c89a; border-radius: 12px; padding: .6rem; cursor: pointer; }
     article.owned { outline: 3px solid var(--accent); }
@@ -55,7 +57,7 @@
       <h1 id="title"></h1>
       <p class="flavor" id="source"></p>
       <p class="flavor" id="flavor">載入中…</p>
-      <p class="hint">灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。</p>
+      <p class="hint">灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。同步碼可在別的裝置還原；不要把碼給別人。</p>
       <div class="stats" id="stats"></div>
     </div>
   </header>
@@ -67,6 +69,12 @@
       <option value="owned">已收藏（彩色）</option>
     </select>
     <span class="count" id="count"></span>
+  </div>
+  <div class="toolbar">
+    <label>同步碼 <input id="sync-code" maxlength="8" spellcheck="false" autocomplete="off" aria-label="同步碼"></label>
+    <button type="button" id="sync-copy">複製</button>
+    <button type="button" id="sync-go">套用</button>
+    <span class="count" id="sync-status"></span>
   </div>
   <main class="grid" id="grid"></main>
   <script>
@@ -97,9 +105,60 @@
     document.getElementById("title").textContent = dex.title;
     document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>`;
 
+    const CODE_RE = /^[a-z0-9]{8}$/;
+    const CODE_KEY = "dex-sync-code";
+    const abc = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const newCode = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), (n) => abc[n % 36]).join("");
+    let syncCode = localStorage.getItem(CODE_KEY);
+    if (!CODE_RE.test(syncCode || "")) {
+      syncCode = newCode();
+      localStorage.setItem(CODE_KEY, syncCode);
+    }
+    document.getElementById("sync-code").value = syncCode;
+    const status = (t) => { document.getElementById("sync-status").textContent = t; };
+    const localPair = () => ({
+      psyduck: JSON.parse(localStorage.getItem("psyduck-owned") || "[]"),
+      ditto: JSON.parse(localStorage.getItem("ditto-owned") || "[]"),
+    });
+    const applyPair = (data) => {
+      localStorage.setItem("psyduck-owned", JSON.stringify(data.psyduck || []));
+      localStorage.setItem("ditto-owned", JSON.stringify(data.ditto || []));
+      owned.clear();
+      for (const id of JSON.parse(localStorage.getItem(dex.key) || "[]")) owned.add(id);
+    };
+    const cloudFail = () => status(/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "雲端只在上線網站可用" : "同步失敗");
+    const cloudPut = () => fetch("/api/sync?code=" + syncCode, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(localPair()),
+    }).then((r) => { if (r.ok) status("已同步"); else cloudFail(); }).catch(cloudFail);
+    const cloudGet = (replaceEmpty) => fetch("/api/sync?code=" + syncCode).then(async (r) => {
+      if (!r.ok) { cloudFail(); return; }
+      const data = await r.json();
+      const n = (data.psyduck || []).length + (data.ditto || []).length;
+      const loc = localPair();
+      if (n || replaceEmpty) applyPair({ psyduck: data.psyduck || [], ditto: data.ditto || [] });
+      else if (loc.psyduck.length + loc.ditto.length) await cloudPut();
+      else status("已連上雲端");
+      if (n) status("已從雲端載入");
+    }).catch(cloudFail);
+
     const owned = new Set(JSON.parse(localStorage.getItem(dex.key) || "[]"));
     let cards = [];
-    const save = () => localStorage.setItem(dex.key, JSON.stringify([...owned]));
+    let saveTimer;
+    const save = () => {
+      localStorage.setItem(dex.key, JSON.stringify([...owned]));
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(cloudPut, 400);
+    };
+    document.getElementById("sync-copy").onclick = () => navigator.clipboard.writeText(syncCode).then(() => status("已複製")).catch(() => status(syncCode));
+    document.getElementById("sync-go").onclick = () => {
+      const next = document.getElementById("sync-code").value.toLowerCase().trim();
+      if (!CODE_RE.test(next)) { status("代碼要 8 碼小寫英數"); return; }
+      syncCode = next;
+      localStorage.setItem(CODE_KEY, syncCode);
+      document.getElementById("sync-code").value = syncCode;
+      cloudGet(true).then(render);
+    };
+    document.getElementById("sync-code").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sync-go").click(); });
 
     function render() {
       const q = document.getElementById("q").value.trim().toLowerCase();
@@ -134,6 +193,7 @@
       fetch(dex.json).then((r) => r.json()),
       fetch(`https://pokeapi.co/api/v2/pokemon/${dex.num}`).then((r) => r.json()),
       fetch(`https://pokeapi.co/api/v2/pokemon-species/${dex.num}`).then((r) => r.json()),
+      cloudGet(false),
     ]).then(([list, mon, species]) => {
       cards = list;
       const pick = (lang) => (species.flavor_text_entries.find((f) => f.language.name === lang) || {}).flavor_text;

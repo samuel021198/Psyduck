@@ -1,3 +1,5 @@
 _tmp*
 .vercel
 .DS_Store
+store.json
+.env*
