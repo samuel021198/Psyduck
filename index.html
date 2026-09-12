@@ -2,7 +2,8 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffe56a">
   <title>日文卡圖鑑</title>
   <style>
     :root {
@@ -11,41 +12,71 @@
       --paper: #fff8e7;
       --accent: #c9a227;
       --card: #fffdf6;
+      --line: #d8c89a;
+      --pad: max(1rem, env(safe-area-inset-left));
+      --pad-r: max(1rem, env(safe-area-inset-right));
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font: 16px/1.55 "Noto Sans TC", "PingFang TC", sans-serif; background: var(--paper); color: var(--ink); }
-    body.ditto { --paper: #f4eef8; --accent: #9a7bb8; background: #f4eef8; }
+    body { margin: 0; font: 16px/1.5 "Noto Sans TC", "PingFang TC", "Noto Sans CJK TC", sans-serif; background: var(--paper); color: var(--ink); padding-bottom: env(safe-area-inset-bottom); }
+    body.ditto { --paper: #f4eef8; --accent: #9a7bb8; --line: #c9b5d8; background: #f4eef8; }
     body.ditto header { background: linear-gradient(#e4d2f0, #f4eef8); }
-    a { color: #5c3d00; font-weight: 600; }
+    a { color: #5c3d00; }
     body.ditto a { color: #4a2d68; }
-    nav { display: flex; gap: .75rem; padding: .85rem 1.5rem 0; flex-wrap: wrap; }
-    nav a { text-decoration: none; padding: .25rem .7rem; border-radius: 999px; border: 1px solid #d4c48a; background: #fff; }
+    nav { display: flex; gap: .5rem; padding: .75rem var(--pad-r) 0 var(--pad); flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    nav a { flex: 0 0 auto; text-decoration: none; padding: .45rem .85rem; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center; }
     nav a.on { background: var(--accent); color: #24180a; border-color: transparent; }
-    header { display: grid; grid-template-columns: 140px 1fr; gap: 1.1rem; align-items: center; padding: 1rem 1.5rem; background: linear-gradient(#ffe56a, var(--paper)); }
-    header img { width: 140px; }
-    h1 { margin: 0 0 .35rem; font-size: 1.7rem; }
+    header { display: grid; grid-template-columns: 120px 1fr; gap: 1rem; align-items: center; padding: 1rem var(--pad-r) 1.1rem var(--pad); background: linear-gradient(#ffe56a, var(--paper)); }
+    header img { width: 120px; }
+    h1 { margin: 0 0 .3rem; font-size: 1.55rem; line-height: 1.25; }
     .meta, .flavor, .hint, .count, article small, a.pick small { color: var(--muted); }
-    .meta { font-weight: 700; }
-    .flavor, .hint { max-width: 44rem; }
-    .hint { margin: .4rem 0 0; font-size: .92rem; }
-    .stats { display: flex; flex-wrap: wrap; gap: .4rem .6rem; margin: .55rem 0 0; }
-    .stats span { background: #fff; border: 1px solid #d8c89a; border-radius: 999px; padding: .15rem .6rem; font-size: .85rem; color: var(--ink); }
-    .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: 0 1.5rem 1rem; }
-    input, select { padding: .45rem .7rem; border: 1px solid #c9b57a; border-radius: 8px; background: #fff; font: inherit; color: var(--ink); }
-    input[type=search] { min-width: 14rem; }
-    .count { margin-left: auto; }
-    #sync-code { width: 8.2rem; letter-spacing: .08em; text-transform: lowercase; }
-    button { padding: .45rem .7rem; border: 1px solid #c9b57a; border-radius: 8px; background: #fff; font: inherit; color: var(--ink); cursor: pointer; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; padding: 0 1.5rem 3rem; }
-    article, a.pick { background: var(--card); border: 1px solid #d8c89a; border-radius: 12px; padding: .6rem; }
-    article { cursor: pointer; }
+    .meta { font-weight: 700; font-size: .92rem; }
+    .flavor { margin: .35rem 0 0; max-width: 40rem; }
+    .hint { margin: .45rem 0 0; font-size: .95rem; max-width: 40rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: .35rem; margin: .5rem 0 0; }
+    .stats span { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: .1rem .55rem; font-size: .8rem; color: var(--ink); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: 0 var(--pad-r) .85rem var(--pad); }
+    .toolbar[hidden] { display: none !important; }
+    .sync { align-items: stretch; }
+    .sync label { display: flex; align-items: center; gap: .4rem; font-weight: 700; }
+    input, select, button { padding: .55rem .7rem; border: 1px solid #c9b57a; border-radius: 8px; background: #fff; font: inherit; color: var(--ink); min-height: 44px; }
+    input[type=search] { flex: 1 1 12rem; min-width: 0; }
+    #sync-code { width: 8.6rem; letter-spacing: .08em; text-transform: lowercase; font-weight: 700; }
+    button { cursor: pointer; font-weight: 700; }
+    .count { margin-left: auto; font-size: .92rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: .85rem; padding: 0 var(--pad-r) 3rem var(--pad); }
+    article, a.pick { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: .55rem; }
     article.owned { outline: 3px solid var(--accent); }
-    article img { width: 100%; aspect-ratio: 63/88; object-fit: contain; background: #efe6c8; border-radius: 6px; filter: grayscale(1); }
+    article img, a.pick img { width: 100%; object-fit: contain; background: #efe6c8; border-radius: 6px; }
+    article img { aspect-ratio: 63/88; filter: grayscale(1); }
     article.owned img { filter: none; }
-    article h2, a.pick h2 { margin: .45rem 0 0; font-size: .95rem; color: var(--ink); }
-    a.pick { text-decoration: none; color: inherit; display: block; }
-    a.pick img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #efe6c8; border-radius: 6px; }
-    @media (max-width: 640px) { header { grid-template-columns: 1fr; text-align: center; } header img { margin: 0 auto; } }
+    article h2, a.pick h2 { margin: .4rem 0 0; font-size: .95rem; color: var(--ink); }
+    article small, a.pick small { display: block; margin-top: .15rem; font-size: .78rem; line-height: 1.35; }
+    a.pick { text-decoration: none; color: inherit; display: block; min-height: 44px; }
+    a.pick img { aspect-ratio: 1; }
+    .zoom { display: block; width: 100%; padding: 0; border: 0; background: none; min-height: 0; border-radius: 6px; }
+    .mark { width: 100%; margin-top: .45rem; }
+    article.owned .mark { background: var(--accent); border-color: transparent; }
+    dialog { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; }
+    dialog::backdrop { background: rgba(20, 12, 4, .86); }
+    dialog .sheet { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem; padding: 1rem; }
+    dialog img { max-width: min(92vw, 420px); max-height: 78dvh; width: auto; height: auto; border-radius: 10px; background: #111; }
+    dialog .cap { margin: 0; color: #f6edd4; text-align: center; font-weight: 700; }
+    dialog .sub { margin: 0; color: #d8c89a; text-align: center; font-size: .9rem; }
+    dialog menu { margin: 0; padding: 0; }
+    @media (max-width: 720px) {
+      header { grid-template-columns: 72px 1fr; gap: .7rem; padding-top: .75rem; }
+      header img { width: 72px; }
+      h1 { font-size: 1.28rem; }
+      .flavor, .stats { display: none; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: .65rem; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .count { margin-left: 0; }
+      .sync { flex-direction: column; }
+      .sync label { width: 100%; }
+      #sync-code { flex: 1; width: auto; }
+      input, select, button { width: 100%; }
+      dialog img { max-width: 96vw; max-height: 72dvh; }
+    }
   </style>
 </head>
 <body>
@@ -63,35 +94,43 @@
   </header>
   <div class="toolbar" id="filters">
     <input type="search" id="q" placeholder="搜名稱或系列" aria-label="搜尋">
-    <select id="kind">
+    <select id="kind" aria-label="篩選">
       <option value="">全部</option>
-      <option value="missing">未收藏（灰階）</option>
-      <option value="owned">已收藏（彩色）</option>
+      <option value="missing">未收藏</option>
+      <option value="owned">已收藏</option>
     </select>
     <span class="count" id="count"></span>
   </div>
-  <div class="toolbar">
-    <label>同步碼 <input id="sync-code" maxlength="8" spellcheck="false" autocomplete="off" aria-label="同步碼"></label>
+  <div class="toolbar sync">
+    <label>同步碼 <input id="sync-code" maxlength="8" spellcheck="false" autocomplete="off" inputmode="text" aria-label="同步碼"></label>
     <button type="button" id="sync-copy">複製</button>
-    <button type="button" id="sync-go">套用</button>
+    <button type="button" id="sync-go">用此碼載入</button>
     <span class="count" id="sync-status"></span>
   </div>
   <main class="grid" id="grid"></main>
+  <dialog id="zoom" aria-label="放大卡圖">
+    <div class="sheet">
+      <img id="zoom-img" alt="">
+      <p class="cap" id="zoom-cap"></p>
+      <p class="sub" id="zoom-sub"></p>
+      <menu><button type="button" id="zoom-close">關閉</button></menu>
+    </div>
+  </dialog>
   <script>
     const pages = {
       psyduck: {
         num: 54, json: "data/cards.json", key: "psyduck-owned", label: "可達鴨",
-        title: "可達鴨日文卡圖鑑",
-        names: "#054 · 水屬性 · 可達鴨 / コダック / Psyduck",
+        title: "可達鴨",
+        names: "#054 · コダック / Psyduck",
         src: "https://www.tcgcollector.com/pokedex/54/psyduck/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=allCardVariants",
-        srcLabel: "TCG Collector 日文 #054",
+        srcLabel: "資料來源：TCG Collector 日文",
       },
       ditto: {
         num: 132, json: "data/ditto.json", key: "ditto-owned", label: "百變怪",
-        title: "百變怪日文卡圖鑑",
-        names: "#132 · 一般屬性 · 百變怪 / メタモン / Ditto",
+        title: "百變怪",
+        names: "#132 · メタモン / Ditto",
         src: "https://www.tcgcollector.com/pokedex/132/ditto/jp?releaseDateOrder=newToOld&displayAs=images&pokemonCardCountMode=allCardVariants",
-        srcLabel: "TCG Collector 日文 #132",
+        srcLabel: "資料來源：TCG Collector 日文",
       },
     };
     const q = new URLSearchParams(location.search).get("p");
@@ -125,10 +164,10 @@
         for (const id of JSON.parse(localStorage.getItem(dex.key) || "[]")) owned.add(id);
       }
     };
-    const cloudFail = () => status(/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "雲端只在上線網站可用" : "同步失敗");
+    const cloudFail = () => status(/^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "本機預覽不能同步" : "同步失敗");
     const cloudPut = () => fetch("/api/sync?code=" + syncCode, {
       method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(localPair()),
-    }).then((r) => { if (r.ok) status("已同步"); else cloudFail(); }).catch(cloudFail);
+    }).then((r) => { if (r.ok) status("已同步到雲端"); else cloudFail(); }).catch(cloudFail);
     const cloudGet = (replaceEmpty) => fetch("/api/sync?code=" + syncCode).then(async (r) => {
       if (!r.ok) { cloudFail(); return; }
       const data = await r.json();
@@ -136,19 +175,30 @@
       const loc = localPair();
       if (n || replaceEmpty) applyPair({ psyduck: data.psyduck || [], ditto: data.ditto || [] });
       else if (loc.psyduck.length + loc.ditto.length) await cloudPut();
-      else status("已連上雲端");
+      else status("已連接雲端");
       if (n) status("已從雲端載入");
     }).catch(cloudFail);
-    document.getElementById("sync-copy").onclick = () => navigator.clipboard.writeText(syncCode).then(() => status("已複製")).catch(() => status(syncCode));
+    document.getElementById("sync-copy").onclick = () => navigator.clipboard.writeText(syncCode).then(() => status("已複製同步碼")).catch(() => status(syncCode));
     document.getElementById("sync-go").onclick = () => {
       const next = document.getElementById("sync-code").value.toLowerCase().trim();
-      if (!CODE_RE.test(next)) { status("代碼要 8 碼小寫英數"); return; }
+      if (!CODE_RE.test(next)) { status("要 8 個小寫英數"); return; }
       syncCode = next;
       localStorage.setItem(CODE_KEY, syncCode);
       document.getElementById("sync-code").value = syncCode;
       cloudGet(true).then(() => { if (dex) render(); else home(); });
     };
     document.getElementById("sync-code").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("sync-go").click(); });
+
+    const dlg = document.getElementById("zoom");
+    const openZoom = (src, cap, sub) => {
+      document.getElementById("zoom-img").src = src;
+      document.getElementById("zoom-img").alt = cap;
+      document.getElementById("zoom-cap").textContent = cap;
+      document.getElementById("zoom-sub").textContent = sub;
+      dlg.showModal();
+    };
+    document.getElementById("zoom-close").onclick = () => dlg.close();
+    dlg.addEventListener("click", (e) => { if (e.target === dlg || e.target.classList.contains("sheet")) dlg.close(); });
 
     const owned = new Set(dex ? JSON.parse(localStorage.getItem(dex.key) || "[]") : []);
     let cards = [];
@@ -164,10 +214,10 @@
       document.getElementById("art").src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/54.png";
       document.getElementById("art").alt = "日文卡圖鑑";
       document.getElementById("meta").textContent = "日文卡圖鑑";
-      document.getElementById("title").textContent = "我的收藏";
+      document.getElementById("title").textContent = "選擇圖鑑";
       document.getElementById("source").textContent = "";
-      document.getElementById("flavor").textContent = "而家得呢幾本。遲吓再加其他寶可夢。";
-      document.getElementById("hint").textContent = "點一本圖鑑開始勾卡。同步碼兩頁共用。";
+      document.getElementById("flavor").textContent = "";
+      document.getElementById("hint").textContent = "而家得呢兩本。點入去勾卡。換手機先複製下面同步碼。";
       document.getElementById("filters").hidden = true;
       Promise.all(Object.entries(pages).map(([k, p]) =>
         fetch(p.json).then((r) => r.json()).then((list) => ({ k, p, n: list.length }))
@@ -177,7 +227,7 @@
           return `<a class="pick" href="?p=${k}">
             <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.num}.png" alt="${p.label}">
             <h2>${p.label}</h2>
-            <small>${p.names.split(" · ")[0]} · 已收藏 ${have} / ${n}</small>
+            <small>已收藏 ${have} / ${n}</small>
           </a>`;
         }).join("");
       });
@@ -193,31 +243,39 @@
         if (!qv) return true;
         return [c.name, c.nameJa, c.set].join(" ").toLowerCase().includes(qv);
       });
-      document.getElementById("count").textContent = `這頁 ${list.length} 張 · 已收藏 ${owned.size} / ${cards.length}`;
-      document.getElementById("grid").innerHTML = list.map((c) => `
-        <article class="${owned.has(c.id) ? "owned" : ""}" data-id="${c.id}" title="${owned.has(c.id) ? "已收藏，再點取消" : "點一下標記已收藏"}">
-          <img src="${c.image}" alt="${c.nameJa || c.name}" loading="lazy">
+      document.getElementById("count").textContent = `已收藏 ${owned.size} / ${cards.length}`;
+      document.getElementById("grid").innerHTML = list.map((c) => {
+        const on = owned.has(c.id);
+        return `<article class="${on ? "owned" : ""}" data-id="${c.id}" data-image="${c.image}" data-name="${(c.nameJa || c.name).replace(/"/g, "")}" data-set="${c.set.replace(/"/g, "")}">
+          <button type="button" class="zoom" aria-label="放大卡圖"><img src="${c.image}" alt="${c.nameJa || c.name}" loading="lazy"></button>
           <h2>${c.nameJa || c.name}</h2>
-          <small>${c.name} · ${c.set}</small>
-        </article>`).join("");
+          <small>${c.set}</small>
+          <button type="button" class="mark">${on ? "已收藏" : "未收藏"}</button>
+        </article>`;
+      }).join("");
     }
 
     if (!dex) {
       home();
     } else {
-      document.title = dex.title;
+      document.title = dex.title + "日文卡圖鑑";
       document.getElementById("art").src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${dex.num}.png`;
       document.getElementById("art").alt = dex.title;
       document.getElementById("meta").textContent = dex.names;
       document.getElementById("title").textContent = dex.title;
-      document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>（有印刷的才分開算）`;
+      document.getElementById("source").innerHTML = `<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel}</a>`;
       document.getElementById("flavor").textContent = "載入中…";
-      document.getElementById("hint").textContent = "灰階＝還沒有。點卡面會亮成彩色，代表你已收藏。再點一次可取消。holo／reverse 等印刷只列 TCG Collector 有的，不是張張都有。同步碼可在別的裝置還原；不要把碼給別人。";
+      document.getElementById("hint").textContent = "撳卡圖放大。撳「未收藏」變成已收藏。灰階＝未有；彩色＝已有。有 holo／reverse 先分開列。";
       document.getElementById("q").addEventListener("input", render);
       document.getElementById("kind").addEventListener("change", render);
       document.getElementById("grid").addEventListener("click", (e) => {
         const art = e.target.closest("article");
         if (!art) return;
+        if (e.target.closest(".zoom")) {
+          openZoom(art.dataset.image, art.dataset.name, art.dataset.set);
+          return;
+        }
+        if (!e.target.closest(".mark")) return;
         const id = art.dataset.id;
         if (owned.has(id)) owned.delete(id); else owned.add(id);
         save();
@@ -230,13 +288,14 @@
         cloudGet(false),
       ]).then(([list, mon, species]) => {
         cards = list;
-        document.getElementById("source").innerHTML = `資料：<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel} · ${cards.length} 張</a>（有印刷的才分開算）`;
+        document.getElementById("source").innerHTML = `<a href="${dex.src}" target="_blank" rel="noreferrer">${dex.srcLabel} · ${cards.length} 張</a>`;
         const pick = (lang) => (species.flavor_text_entries.find((f) => f.language.name === lang) || {}).flavor_text;
         document.getElementById("flavor").textContent = (pick("zh-Hant") || pick("zh-Hans") || pick("ja") || pick("en") || "").replace(/\s+/g, " ");
         document.getElementById("stats").innerHTML = mon.stats.map((s) => `<span>${s.stat.name} ${s.base_stat}</span>`).join("");
         render();
       }).catch(() => {
-        document.getElementById("flavor").textContent = "讀取失敗：請用本機網站開啟，不要直接雙擊檔案。";
+        document.getElementById("flavor").textContent = "";
+        document.getElementById("hint").textContent = "讀取失敗：請用瀏覽器打開網站，不要直接雙擊檔案。";
       });
     }
   </script>
