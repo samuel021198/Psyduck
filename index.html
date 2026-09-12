@@ -217,7 +217,7 @@
       document.getElementById("title").textContent = "選擇圖鑑";
       document.getElementById("source").textContent = "";
       document.getElementById("flavor").textContent = "";
-      document.getElementById("hint").textContent = "而家得呢兩本。點入去勾卡。換手機先複製下面同步碼。";
+      document.getElementById("hint").textContent = "記低Collection既同步碼!";
       document.getElementById("filters").hidden = true;
       Promise.all(Object.entries(pages).map(([k, p]) =>
         fetch(p.json).then((r) => r.json()).then((list) => ({ k, p, n: list.length }))
